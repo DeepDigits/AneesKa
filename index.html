@@ -164,10 +164,61 @@
         color:var(--muted);
         border-top:1px solid rgba(212,175,55,0.1);
       }
+      /* Loader animations */
+      #stock-loader{opacity:1}
+      #stock-loader.fade-out{opacity:0;pointer-events:none}
+      @keyframes drawLine {
+        from { stroke-dashoffset: 400; }
+        to   { stroke-dashoffset: 0; }
+      }
+      @keyframes tickerMove {
+        from { transform: translateX(0%); }
+        to { transform: translateX(-50%); }
+      }
     </style>
   </head>
   <body class="min-h-full antialiased">
     <a href="#main" class="skip-link">Skip to content</a>
+
+    <!-- Stock market loading overlay -->
+    <div id="stock-loader" aria-hidden="true" style="position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:linear-gradient(180deg,rgba(4,4,4,1),rgba(8,8,10,0.95));backdrop-filter:blur(6px);transition:opacity .6s ease;">
+      <div style="max-width:820px;width:92%;padding:2rem;text-align:center;color:var(--accent);">
+        <!-- Animated mini chart -->
+        <div style="display:flex;align-items:center;gap:1rem;justify-content:center;">
+          <svg id="loader-chart" viewBox="0 0 200 80" width="420" height="168" aria-hidden="true" style="overflow:visible;">
+            <defs>
+              <linearGradient id="g1" x1="0" x2="0" y1="0" y2="1">
+                <stop offset="0%" stop-color="#d4af37" stop-opacity="0.95" />
+                <stop offset="100%" stop-color="#d4af37" stop-opacity="0.05" />
+              </linearGradient>
+            </defs>
+            <rect x="0" y="0" width="200" height="80" fill="transparent"></rect>
+            <!-- area fill -->
+            <path id="area" d="M0,70 C30,50 60,30 90,40 C120,52 150,22 180,30 L200,30 L200,80 L0,80 Z" fill="url(#g1)" opacity="0.18"></path>
+            <!-- animated line -->
+            <path id="line" d="M0,70 C30,50 60,30 90,40 C120,52 150,22 180,30" fill="none" stroke="url(#g1)" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="1" style="filter:drop-shadow(0 6px 14px rgba(0,0,0,0.6));"></path>
+            <!-- marker dot that follows the line -->
+            <circle id="dot" cx="0" cy="70" r="3.8" fill="#d4af37" stroke="#fff" stroke-width="0.8"></circle>
+          </svg>
+
+          <!-- ticker -->
+          <div style="text-align:left;min-width:220px;">
+            <div style="font-size:0.85rem;color:var(--gold);font-weight:700;letter-spacing:0.06em;margin-bottom:6px;">Live Market</div>
+            <div id="ticker" style="overflow:hidden;white-space:nowrap;display:block;background:rgba(255,255,255,0.03);padding:.5rem .6rem;border-radius:8px;border:1px solid rgba(212,175,55,0.06);">
+              <div id="ticker-inner" style="display:inline-block;will-change:transform;">
+                <span style="margin-right:2rem;color:var(--gold);font-weight:700">NIFTY 50 ▲ 19,842.30</span>
+                <span style="margin-right:2rem;color:#7ee787;">RELIANCE ▲ 2.34%</span>
+                <span style="margin-right:2rem;color:#ff7b7b;">HDFCBANK ▼ 0.52%</span>
+                <span style="margin-right:2rem;color:var(--gold);">INFY ▲ 1.12%</span>
+                <span style="margin-right:2rem;color:#7ee787;">TCS ▲ 0.74%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-top:1rem;color:var(--text-secondary);font-size:0.95rem;">Preparing market snapshots and insights…</div>
+      </div>
+    </div>
 
     <!-- Header -->
     <header class="sticky top-0 z-50">
@@ -521,6 +572,100 @@
         </div>
       </section>
     </main>
+    
+    <script>
+      (function(){
+        // Animate the chart line and dot
+        const line = document.getElementById('line');
+        const dot = document.getElementById('dot');
+        const area = document.getElementById('area');
+        if(line){
+          // prepare stroke dash for draw effect
+          const len = line.getTotalLength();
+          line.style.strokeDasharray = len;
+          line.style.strokeDashoffset = len;
+          line.style.transition = 'stroke-dashoffset 1.6s cubic-bezier(.2,.9,.2,1)';
+          // Slightly animate area for pop
+          area.style.transformOrigin = 'left center';
+          area.style.transition = 'transform 1.2s ease-out, opacity 1s ease-out';
+
+          // play animation loop
+          function play(){
+            // draw line
+            line.style.strokeDashoffset = '0';
+            area.style.transform = 'translateY(0) scaleY(1)';
+            area.style.opacity = '0.22';
+
+            // move dot along path
+            const total = line.getTotalLength();
+            let t = 0;
+            const duration = 1600; // ms
+            const start = performance.now();
+            function step(now){
+              const elapsed = now - start;
+              const progress = Math.min(1, elapsed / duration);
+              const p = progress; // linear for now
+              const pt = line.getPointAtLength(p * total);
+              dot.setAttribute('cx', pt.x);
+              dot.setAttribute('cy', pt.y);
+              if(progress < 1) requestAnimationFrame(step);
+            }
+            requestAnimationFrame(step);
+
+            // reset after a short pause to create loop
+            setTimeout(()=>{
+              line.style.strokeDashoffset = len;
+              area.style.opacity = '0.08';
+              // schedule next loop
+            }, 1200);
+          }
+
+          // initial play and repeat while loader visible
+          let animInterval = setInterval(()=>{
+            if(document.getElementById('stock-loader') && document.getElementById('stock-loader').style.opacity!=='0'){
+              play();
+            } else {
+              clearInterval(animInterval);
+            }
+          }, 1800);
+          play();
+        }
+
+        // Ticker animation: duplicate inner content to create seamless scroll
+        const tickerInner = document.getElementById('ticker-inner');
+        if(tickerInner){
+          // duplicate the items so we can scroll seamlessly
+          const clone = tickerInner.cloneNode(true);
+          clone.style.marginLeft = '2rem';
+          tickerInner.parentNode.appendChild(clone);
+          // animate via CSS transform
+          let start = null;
+          const speed = 40; // pixels per second
+          function tick(now){
+            if(!start) start = now;
+            const elapsed = now - start;
+            const px = (elapsed / 1000) * speed;
+            tickerInner.parentNode.firstElementChild.style.transform = `translateX(${- (px % (tickerInner.scrollWidth))}px)`;
+            requestAnimationFrame(tick);
+          }
+          requestAnimationFrame(tick);
+        }
+
+        // Remove loader after full window load (and a tiny delay for visuals)
+        window.addEventListener('load', ()=>{
+          const loader = document.getElementById('stock-loader');
+          if(!loader) return;
+          // ensure animations have at least one loop
+          setTimeout(()=>{
+            loader.classList.add('fade-out');
+            // remove from DOM after transition
+            setTimeout(()=>{
+              if(loader && loader.parentNode) loader.parentNode.removeChild(loader);
+            }, 700);
+          }, 700);
+        });
+      })();
+    </script>
 
     <!-- Footer -->
     <footer style="border-top:1px solid rgba(255,255,255,0.04);background:linear-gradient(180deg,#060606,#070707);">
