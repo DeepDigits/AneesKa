@@ -426,12 +426,12 @@
               <p class="mt-2 font-semibold text-lg" style="color:#ffffff;">NISM-Certified Equity Research Analyst</p>
             </div>
             <div class="rounded-xl panel p-8 text-center card-hover" data-aos="zoom-in" data-aos-delay="400" style="border:1px solid rgba(255,255,255,0.04)">
-              <div class="rounded-full" style="background:rgba(201,169,83,0.08);width:64px;height:64px;display:flex;align-items:center;justify-content:center;margin:0 auto .75rem;">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="color:var(--gold)">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.141 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0" />
-                </svg>
-              </div>
-              <p class="text-sm" style="color:var(--muted);">Speaking</p>
+                <div class="rounded-full" style="background:rgba(201,169,83,0.08);width:64px;height:64px;display:flex;align-items:center;justify-content:center;margin:0 auto .75rem;position:relative;">
+                  <!-- Ionicons: person with a small volume indicator to suggest 'speaking' -->
+                  <ion-icon name="person" style="font-size:28px;color:var(--gold);" aria-hidden="true"></ion-icon>
+                  <ion-icon name="volume-high" style="position:absolute;right:8px;bottom:10px;font-size:12px;color:var(--gold);" aria-hidden="true"></ion-icon>
+                </div>
+              <p class="text-sm" style="color:var(--muted);">Guest Talk</p>
               <p class="mt-2 font-semibold text-lg" style="color:#ffffff;">Speaker at Motilal Oswal</p>
             </div>
           </div>
@@ -531,7 +531,8 @@
         </div>
       </div>
     </footer>
-
+    <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
+    <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
     <script>
       // Initialize AOS animations
       document.addEventListener('DOMContentLoaded', function() {
